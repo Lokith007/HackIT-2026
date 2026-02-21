@@ -4,7 +4,8 @@
  * Analyzes utility bill payment records to compute:
  *  - On-time vs delayed payment classification
  *  - Payment success rate
- *  - Reliability score (0–100) for credit underwriting
+ *  - Weighted reliability score (0–100) for credit underwriting
+ *  - Consistency and trend analysis
  */
 
 /**
@@ -18,13 +19,10 @@
  */
 
 /**
- * Classifies a single bill as on-time or delayed.
- *
- * On-time:  paymentDate <= dueDate
- * Delayed:  paymentDate > dueDate  OR  unpaid
+ * Classifies a single bill as on-time or delayed with severity.
  *
  * @param {BillRecord} bill
- * @returns {'ON_TIME' | 'DELAYED' | 'UNPAID'}
+ * @returns {'ON_TIME' | 'MINOR_DELAY' | 'MAJOR_DELAY' | 'UNPAID'}
  */
 function classifyPayment(bill) {
     if (!bill.paymentDate || (bill.paymentStatus || '').toUpperCase() === 'UNPAID') {
@@ -35,10 +33,13 @@ function classifyPayment(bill) {
     const paid = new Date(bill.paymentDate);
 
     if (isNaN(due.getTime()) || isNaN(paid.getTime())) {
-        return 'DELAYED'; // treat invalid dates as delayed
+        return 'MAJOR_DELAY'; // treat invalid dates as major delay
     }
 
-    return paid <= due ? 'ON_TIME' : 'DELAYED';
+    if (paid <= due) return 'ON_TIME';
+
+    const delayDays = computeDelayDays(bill.dueDate, bill.paymentDate);
+    return delayDays <= 5 ? 'MINOR_DELAY' : 'MAJOR_DELAY';
 }
 
 /**
@@ -52,17 +53,39 @@ function calculateReliability(bills) {
         return emptyResult();
     }
 
+    // Sort bills by due date to analyze trends (oldest first)
+    const sortedBills = [...bills].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
     let onTimePayments = 0;
-    let delayedPayments = 0;
+    let minorDelays = 0;
+    let majorDelays = 0;
     let unpaidBills = 0;
     const classified = [];
 
-    for (const bill of bills) {
-        const status = classifyPayment(bill);
+    let totalWeight = 0;
+    let earnedWeight = 0;
 
-        if (status === 'ON_TIME') onTimePayments++;
-        else if (status === 'DELAYED') delayedPayments++;
-        else unpaidBills++;
+    for (const bill of sortedBills) {
+        const status = classifyPayment(bill);
+        const weight = 10; // Base weight per bill
+        totalWeight += weight;
+
+        let billScore = 0;
+        if (status === 'ON_TIME') {
+            onTimePayments++;
+            billScore = 10;
+        } else if (status === 'MINOR_DELAY') {
+            minorDelays++;
+            billScore = 6; // 40% penalty for minor delay
+        } else if (status === 'MAJOR_DELAY') {
+            majorDelays++;
+            billScore = 2; // 80% penalty for major delay
+        } else {
+            unpaidBills++;
+            billScore = 0; // 100% penalty for unpaid
+        }
+
+        earnedWeight += billScore;
 
         classified.push({
             billerName: bill.billerName || 'Unknown',
@@ -72,16 +95,26 @@ function calculateReliability(bills) {
             paymentDate: bill.paymentDate || '',
             originalStatus: bill.paymentStatus || '',
             classification: status,
-            delayDays: status === 'DELAYED' ? computeDelayDays(bill.dueDate, bill.paymentDate) : 0,
+            delayDays: (status === 'MINOR_DELAY' || status === 'MAJOR_DELAY') ? computeDelayDays(bill.dueDate, bill.paymentDate) : 0,
+            score: billScore
         });
     }
 
     const totalBills = bills.length;
-    const paidBills = onTimePayments + delayedPayments;
     const paymentSuccessRate = totalBills > 0
         ? Math.round((onTimePayments / totalBills) * 10000) / 10000
         : 0;
-    const reliabilityScore = Math.round(paymentSuccessRate * 100 * 100) / 100;
+
+    // Reliability Score is now weighted: (Earned / Total) * 100
+    const reliabilityScore = totalWeight > 0
+        ? Math.round((earnedWeight / totalWeight) * 100 * 100) / 100
+        : 0;
+
+    // Consistency: % of months/bills that were strictly ON_TIME
+    const consistency = totalBills > 0 ? (onTimePayments / totalBills) : 0;
+
+    // Trend analysis: compare last 3 bills vs overall
+    const trend = detectTrend(classified);
 
     // Per-category breakdown
     const categoryBreakdown = buildCategoryBreakdown(classified);
@@ -89,11 +122,13 @@ function calculateReliability(bills) {
     return {
         totalBills,
         onTimePayments,
-        delayedPayments,
+        minorDelays,
+        majorDelays,
         unpaidBills,
-        paidBills,
         paymentSuccessRate,
         reliabilityScore,
+        consistencyScore: Math.round(consistency * 100),
+        trend,
         categoryBreakdown,
         bills: classified,
     };
@@ -112,7 +147,23 @@ function computeDelayDays(dueDate, paymentDate) {
 }
 
 /**
- * Builds per-category breakdown (ELECTRICITY, WATER, BROADBAND).
+ * Detects trend by comparing average score of last 3 bills vs overall average.
+ */
+function detectTrend(classified) {
+    if (classified.length < 4) return 'STABLE'; // Not enough data for trend
+
+    const overallAvg = classified.reduce((sum, b) => sum + b.score, 0) / classified.length;
+    const last3 = classified.slice(-3);
+    const last3Avg = last3.reduce((sum, b) => sum + b.score, 0) / 3;
+
+    const diff = last3Avg - overallAvg;
+    if (diff > 1) return 'IMPROVING';
+    if (diff < -1) return 'DECLINING';
+    return 'STABLE';
+}
+
+/**
+ * Builds per-category breakdown.
  */
 function buildCategoryBreakdown(classified) {
     const cats = {};
@@ -120,22 +171,23 @@ function buildCategoryBreakdown(classified) {
     for (const bill of classified) {
         const cat = bill.billCategory.toUpperCase();
         if (!cats[cat]) {
-            cats[cat] = { total: 0, onTime: 0, delayed: 0, unpaid: 0, totalAmount: 0 };
+            cats[cat] = { total: 0, onTime: 0, minorDelay: 0, majorDelay: 0, unpaid: 0, totalAmount: 0, earnedScore: 0 };
         }
         cats[cat].total++;
         cats[cat].totalAmount += bill.billAmount;
+        cats[cat].earnedScore += bill.score;
+
         if (bill.classification === 'ON_TIME') cats[cat].onTime++;
-        else if (bill.classification === 'DELAYED') cats[cat].delayed++;
+        else if (bill.classification === 'MINOR_DELAY') cats[cat].minorDelay++;
+        else if (bill.classification === 'MAJOR_DELAY') cats[cat].majorDelay++;
         else cats[cat].unpaid++;
     }
 
-    // Add per-category success rate
     for (const cat of Object.keys(cats)) {
         const c = cats[cat];
-        c.successRate = c.total > 0
-            ? Math.round((c.onTime / c.total) * 10000) / 10000
-            : 0;
+        c.weightedScore = c.total > 0 ? Math.round((c.earnedScore / (c.total * 10)) * 100) : 0;
         c.totalAmount = Math.round(c.totalAmount * 100) / 100;
+        delete c.earnedScore; // Clean up internal field
     }
 
     return cats;
@@ -143,10 +195,6 @@ function buildCategoryBreakdown(classified) {
 
 /**
  * Formats the final JSON response.
- *
- * @param {Object} reliability - Output from calculateReliability.
- * @param {Object} [meta] - Additional metadata.
- * @returns {Object} Structured JSON response.
  */
 function formatResponse(reliability, meta = {}) {
     return {
@@ -156,10 +204,13 @@ function formatResponse(reliability, meta = {}) {
             summary: {
                 totalBills: reliability.totalBills,
                 onTimePayments: reliability.onTimePayments,
-                delayedPayments: reliability.delayedPayments,
+                minorDelays: reliability.minorDelays,
+                majorDelays: reliability.majorDelays,
                 unpaidBills: reliability.unpaidBills,
                 paymentSuccessRate: reliability.paymentSuccessRate,
                 reliabilityScore: reliability.reliabilityScore,
+                consistencyScore: reliability.consistencyScore,
+                trend: reliability.trend
             },
             categoryBreakdown: reliability.categoryBreakdown,
             bills: reliability.bills,
@@ -172,11 +223,13 @@ function emptyResult() {
     return {
         totalBills: 0,
         onTimePayments: 0,
-        delayedPayments: 0,
+        minorDelays: 0,
+        majorDelays: 0,
         unpaidBills: 0,
-        paidBills: 0,
         paymentSuccessRate: 0,
         reliabilityScore: 0,
+        consistencyScore: 0,
+        trend: 'NONE',
         categoryBreakdown: {},
         bills: [],
     };
