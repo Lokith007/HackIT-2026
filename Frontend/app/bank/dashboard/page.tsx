@@ -7,11 +7,11 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { AppHeader } from '@/components/AppHeader';
 
 const MOCK_MSMES = [
-  { id: 'MSME-001', name: 'ABC Traders', score: 745, risk: 'Low', industry: 'Retail', location: 'Mumbai', turnover: '50L-1Cr' },
-  { id: 'MSME-002', name: 'XYZ Manufacturing', score: 612, risk: 'Medium', industry: 'Manufacturing', location: 'Pune', turnover: '1Cr-5Cr' },
-  { id: 'MSME-003', name: 'Tech Solutions Pvt', score: 820, risk: 'Low', industry: 'IT', location: 'Bangalore', turnover: '5Cr-10Cr' },
-  { id: 'MSME-004', name: 'Green Agro', score: 558, risk: 'Medium', industry: 'Agriculture', location: 'Nagpur', turnover: '25L-50L' },
-  { id: 'MSME-005', name: 'Metro Foods', score: 690, risk: 'Low', industry: 'F&B', location: 'Delhi', turnover: '1Cr-5Cr' },
+  { id: 'MSME-001', name: 'Shree Krishna Traders', score: 745, risk: 'Low', industry: 'Retail', location: 'Mumbai', turnover: '50L-1Cr' },
+  { id: 'MSME-002', name: 'Precision Gears & Tools Pvt Ltd', score: 612, risk: 'Medium', industry: 'Manufacturing', location: 'Pune', turnover: '1Cr-5Cr' },
+  { id: 'MSME-003', name: 'NexGen Software Solutions Pvt Ltd', score: 820, risk: 'Low', industry: 'IT', location: 'Bangalore', turnover: '5Cr-10Cr' },
+  { id: 'MSME-004', name: 'Green Valley Agro Pvt Ltd', score: 558, risk: 'Medium', industry: 'Agriculture', location: 'Nagpur', turnover: '25L-50L' },
+  { id: 'MSME-005', name: 'Spice Route Foods Pvt Ltd', score: 690, risk: 'Low', industry: 'F&B', location: 'Delhi', turnover: '1Cr-5Cr' },
 ];
 
 export default function BankDashboardPage() {

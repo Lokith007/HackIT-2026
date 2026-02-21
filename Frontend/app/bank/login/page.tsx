@@ -11,7 +11,6 @@ export default function BankLoginPage() {
   const cardRef = useRef<HTMLDivElement>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [twoFa, setTwoFa] = useState('');
 
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -62,15 +61,6 @@ export default function BankLoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-            />
-            <Input
-              label="2FA Code"
-              placeholder="Enter 6-digit code"
-              value={twoFa}
-              onChange={(e) => setTwoFa(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              maxLength={6}
-              type="text"
-              inputMode="numeric"
             />
             <Button type="submit" variant="primary" className="w-full">
               Login

@@ -8,11 +8,11 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { NovaScoreMeter } from '@/components/dashboard/NovaScoreMeter';
 
 const MOCK_MSME: Record<string, { name: string; score: number; risk: string; industry: string; location: string; turnover: string }> = {
-  'MSME-001': { name: 'ABC Traders', score: 745, risk: 'Low', industry: 'Retail', location: 'Mumbai', turnover: '50L-1Cr' },
-  'MSME-002': { name: 'XYZ Manufacturing', score: 612, risk: 'Medium', industry: 'Manufacturing', location: 'Pune', turnover: '1Cr-5Cr' },
-  'MSME-003': { name: 'Tech Solutions Pvt', score: 820, risk: 'Low', industry: 'IT', location: 'Bangalore', turnover: '5Cr-10Cr' },
-  'MSME-004': { name: 'Green Agro', score: 558, risk: 'Medium', industry: 'Agriculture', location: 'Nagpur', turnover: '25L-50L' },
-  'MSME-005': { name: 'Metro Foods', score: 690, risk: 'Low', industry: 'F&B', location: 'Delhi', turnover: '1Cr-5Cr' },
+  'MSME-001': { name: 'Shree Krishna Traders', score: 745, risk: 'Low', industry: 'Retail', location: 'Mumbai', turnover: '50L-1Cr' },
+  'MSME-002': { name: 'Precision Gears & Tools Pvt Ltd', score: 612, risk: 'Medium', industry: 'Manufacturing', location: 'Pune', turnover: '1Cr-5Cr' },
+  'MSME-003': { name: 'NexGen Software Solutions Pvt Ltd', score: 820, risk: 'Low', industry: 'IT', location: 'Bangalore', turnover: '5Cr-10Cr' },
+  'MSME-004': { name: 'Green Valley Agro Pvt Ltd', score: 558, risk: 'Medium', industry: 'Agriculture', location: 'Nagpur', turnover: '25L-50L' },
+  'MSME-005': { name: 'Spice Route Foods Pvt Ltd', score: 690, risk: 'Low', industry: 'F&B', location: 'Delhi', turnover: '1Cr-5Cr' },
 };
 
 const SHAP_FACTORS = [
@@ -23,11 +23,51 @@ const SHAP_FACTORS = [
   { name: 'Industry risk', impact: -0.08, direction: 'negative' },
 ];
 
+/** Dummy social media profiles per MSME (varied by id for realism). */
+function getDummySocialForMsme(msmeId: string) {
+  const seed = msmeId.replace(/\D/g, '') || '1';
+  const n = Math.min(parseInt(seed, 10) || 1, 5);
+  const linkedInConnections = 380 + n * 120;
+  const linkedInViewsNum = 800 + n * 200;
+  const linkedInViewsStr = linkedInViewsNum >= 1000
+    ? `${(linkedInViewsNum / 1000).toFixed(1).replace(/\.0$/, '')}k`
+    : String(linkedInViewsNum);
+  return [
+    {
+      platform: 'LinkedIn',
+      label: 'LinkedIn',
+      url: 'https://www.linkedin.com/in/msme-profile',
+      title: 'Professional Profile',
+      connections: linkedInConnections,
+      profileViews: linkedInViewsStr,
+    },
+    {
+      platform: 'X (Twitter)',
+      label: 'X (Twitter)',
+      url: 'https://x.com/msme_handle',
+      title: 'Business account',
+      followers: 1200 + n * 400,
+      following: 200 + n * 50,
+      retweets: 80 + n * 20,
+    },
+    {
+      platform: 'Instagram',
+      label: 'Instagram',
+      url: 'https://www.instagram.com/msme_business',
+      title: 'Business profile',
+      followers: 450 + n * 100,
+      following: 120 + n * 30,
+      posts: 24 + n * 4,
+    },
+  ];
+}
+
 export default function BankMSMEDetailPage() {
   const params = useParams();
   const id = (params?.id as string) || '';
   const msme = MOCK_MSME[id] || MOCK_MSME['MSME-001'];
   const containerRef = useRef<HTMLDivElement>(null);
+  const socialProfiles = getDummySocialForMsme(id);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !containerRef.current) return;
@@ -164,6 +204,80 @@ export default function BankMSMEDetailPage() {
                 <span className="text-cyan-400">•</span> Revenue trend: Stable MoM
               </li>
             </ul>
+          </GlassCard>
+        </div>
+
+        <div className="mt-6">
+          <GlassCard data-detail-card className="p-6">
+            <h3 className="font-display text-lg font-semibold text-slate-200 mb-4 flex items-center gap-2">
+              <span className="h-0.5 w-8 rounded bg-teal-500" />
+              Social media
+            </h3>
+            <p className="text-sm text-slate-500 mb-4">Linked profiles and engagement (dummy data for review)</p>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {socialProfiles.map((profile) => (
+                <div
+                  key={profile.platform}
+                  className="rounded-xl border border-slate-700/50 bg-slate-800/30 p-4"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-slate-200">{profile.label}</span>
+                    <span className="rounded-full px-2 py-0.5 text-xs bg-teal-500/20 text-teal-400">
+                      Connected
+                    </span>
+                  </div>
+                  <a
+                    href={profile.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-cyan-400 hover:text-cyan-300 truncate block mb-3"
+                  >
+                    {profile.url}
+                  </a>
+                  {profile.title && (
+                    <p className="text-sm text-slate-300 mb-3">{profile.title}</p>
+                  )}
+                  <div className="space-y-1.5 text-xs">
+                    {'connections' in profile && (
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Connections</span>
+                        <span className="text-slate-300 font-medium tabular-nums">{profile.connections}+</span>
+                      </div>
+                    )}
+                    {'profileViews' in profile && (
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Profile views</span>
+                        <span className="text-slate-300 font-medium tabular-nums">{profile.profileViews}</span>
+                      </div>
+                    )}
+                    {'followers' in profile && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Followers</span>
+                          <span className="text-slate-300 font-medium tabular-nums">{profile.followers}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Following</span>
+                          <span className="text-slate-300 font-medium tabular-nums">{profile.following}</span>
+                        </div>
+                        {'retweets' in profile && (
+                          <div className="flex justify-between">
+                            <span className="text-slate-500">Retweets</span>
+                            <span className="text-slate-300 font-medium tabular-nums">{profile.retweets}</span>
+                          </div>
+                        )}
+                        {'posts' in profile && (
+                          <div className="flex justify-between">
+                            <span className="text-slate-500">Posts</span>
+                            <span className="text-slate-300 font-medium tabular-nums">{profile.posts}</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </GlassCard>
         </div>
       </div>
