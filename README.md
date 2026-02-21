@@ -42,31 +42,49 @@ Open [http://localhost:3000](http://localhost:3000).
 ## Project Structure
 
 ```
-app/
-  page.tsx              # Landing
-  layout.tsx
-  globals.css
-  msme/login/
-  msme/dashboard/
-  bank/login/
-  bank/dashboard/
-  bank/msme/[id]/
-components/
-  landing/              # HeroSection, FeaturesSection
-  dashboard/            # NovaScoreMeter, AnimatedCounter
-  ui/                    # GlassCard, Button, Input
-  Scene3D.tsx            # Three.js background
-  LoadingScreen.tsx
-  SecurityBadges.tsx
-  PageTransitionWrapper.tsx
-  ClientLayout.tsx
-lib/
-  gsap.ts
+Frontend/               # Next.js 14 Frontend (App Router)
+Backend/                # Node.js/Express Intelligence Engine
+  server.js             # Ingestion, Validation, and Scoring logic
+  package.json          # Backend dependencies
+```
+
+## Backend Engine (Intelligence Layer)
+
+The backend implements a multi-stage credit underwriting pipeline:
+
+1. **Ingestion Layer**: Mocked API integration for NPCI (UPI), GSTN, and Bank Account Aggregators.
+2. **Validation Layer**: Multi-layered rules and AI anomaly detection to prevent MSME fraud.
+3. **Scoring Layer (NovaScore)**: Ensemble model providing a credit score (300-900).
+4. **Explainable AI**: SHAP-style impact analysis for transparency.
+5. **Blockchain Audit**: Cryptographic proof of every scoring computation.
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/process-credit` | `GET` | Run the full intelligence pipeline |
+
+## Getting Started
+
+### Frontend
+```bash
+cd Frontend
+npm install
+npm run dev
+```
+
+### Backend
+```bash
+cd Backend
+npm install
+node server.js
 ```
 
 ## Build
 
 ```bash
+# Frontend
+cd Frontend
 npm run build
 npm start
 ```
