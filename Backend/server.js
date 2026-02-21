@@ -3,6 +3,7 @@ const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
 const crypto = require("crypto");
+const { getSocialActivity } = require("./socialScraper");
 
 const app = express();
 app.use(cors());
@@ -155,6 +156,35 @@ app.get("/api/process-credit", (req, res) => {
     } catch (error) {
         console.error("Pipeline Error:", error);
         res.status(500).json({ success: false, error: "Internal Credit Intelligence Engine Failure" });
+    }
+});
+
+// --- SOCIAL ACTIVITY ENDPOINT ---
+/**
+ * Scrapes social media activity for a given handle and platform.
+ * Query Params: ?handle=username&platform=instagram|x
+ */
+app.get("/api/social-activity", async (req, res) => {
+    const { handle, platform } = req.query;
+
+    if (!handle || !platform) {
+        return res.status(400).json({
+            success: false,
+            error: "Handle and platform are required."
+        });
+    }
+
+    try {
+        const activityData = await getSocialActivity(handle, platform);
+        res.json({
+            success: true,
+            data: activityData
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: "Failed to fetch social activity."
+        });
     }
 });
 
