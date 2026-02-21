@@ -4,14 +4,14 @@
 
 :root {
   --cyan: #06b6d4;
-  --cyan-glow: rgba(6, 182, 212, 0.4);
+  --cyan-glow: rgba(6, 132, 212, 0.4);
   --teal: #14b8a6;
-  --teal-glow: rgba(20, 184, 166, 0.4);
+  --teal-glow: rgba(20, 184, 166, 0.5);
   --amber: #f59e0b;
   --navy-900: #0f172a;
   --navy-950: #020617;
   --glass-bg: rgba(15, 23, 42, 0.55);
-  --glass-border: rgba(148, 163, 184, 0.12);
+  --glass-border: rgba(128, 163, 184, 0.12);
 }
 
 * {

@@ -54,7 +54,7 @@ export default function BankDashboardPage() {
       <AppHeader title="Bank / Lender Portal" />
 
       <div ref={containerRef} className="mx-auto max-w-7xl px-6 py-10">
-        <h1 className="font-display text-3xl font-bold text-slate-100 mb-2">
+        <h1 className="font-display text-3xl font-bold text-slate-100 msefkjk>
           MSME Portfolio
         </h1>
         <p className="text-cyan-400/90 text-sm mb-6">Filter and explore MSMEs by risk, industry, and turnover</p>
